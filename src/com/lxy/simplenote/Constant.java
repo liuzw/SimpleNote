@@ -27,4 +27,6 @@ public class Constant {
 	public static final String PREFERENCES_NAME = "com.lxy.note";
 	public static final String KEY_NOTE_TITLE = "note_title";
 	public static final String KEY_NOTE_CONTENT = "note_content";
+	
+	public static final String KEY_WIDGET_ID = "widget_id";
 }
