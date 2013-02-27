@@ -1,6 +1,7 @@
 package com.lxy.simplenote;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -10,7 +11,7 @@ import android.widget.TextView;
 
 public class NoteActivity extends Activity{
 	
-	private SharedPreferences mPreferences;
+//	private SharedPreferences preferences;
 	private int widgetId;
 
 	@Override
@@ -18,7 +19,7 @@ public class NoteActivity extends Activity{
 		super.onCreate(savedInstanceState);
 		//Constant.log("onCreate");
 		setContentView(R.layout.note_activity_layout);
-		mPreferences = getSharedPreferences(Constant.PREFERENCES_NAME, 0);
+//		preferences = getSharedPreferences(Constant.PREFERENCES_NAME, 0);
 		Intent i = getIntent();
 		widgetId = i.getIntExtra(Constant.KEY_WIDGET_ID, -1);
 		Constant.log("onCreate: widgetId = " + widgetId + ", intent = " + i);
@@ -50,17 +51,18 @@ public class NoteActivity extends Activity{
 	 * 读取已经存储的笔记和标题用以显示
 	 */
 	private void readNote(){
-		if(mPreferences == null) return;
-		String title = mPreferences.getString(Constant.KEY_NOTE_TITLE + widgetId, "");
+		SharedPreferences preferences = getSharedPreferences(Constant.PREFERENCES_NAME, 0);
+		String title = preferences.getString(Constant.KEY_NOTE_TITLE + widgetId, "");
 		if(!TextUtils.isEmpty(title)){
 			TextView titleView = (TextView) findViewById(R.id.noteTitle);
 			titleView.setText(title);
 		}
 		
-		String content = mPreferences.getString(Constant.KEY_NOTE_CONTENT + widgetId, "");
+		String content = preferences.getString(Constant.KEY_NOTE_CONTENT + widgetId, "");
 		if(!TextUtils.isEmpty(content)){
 			TextView contentView = (TextView) findViewById(R.id.noteContent);
 			contentView.setText(content);
+			contentView.requestFocus();
 		}
 	}
 	
@@ -68,20 +70,24 @@ public class NoteActivity extends Activity{
 	 * 存储现在笔记和标题
 	 */
 	private void writeNote(){
-		if(mPreferences == null) return;
-		Editor editor = mPreferences.edit();
+		SharedPreferences preferences = getSharedPreferences(Constant.PREFERENCES_NAME, 0);
+		Editor editor = preferences.edit();
 		TextView titleView = (TextView) findViewById(R.id.noteTitle);
 		
-		String title = titleView.getText().toString().trim();
-		if(!TextUtils.isEmpty(title)){
-			editor.putString(Constant.KEY_NOTE_TITLE + widgetId, title);
-			NoteAppWidgetProvider.setSummary(widgetId, title);
+		String editTitle = titleView.getText().toString().trim();
+		String savedTitle = preferences.getString(Constant.KEY_NOTE_TITLE + widgetId, "");
+		if((!TextUtils.isEmpty(editTitle) || !TextUtils.isEmpty(savedTitle)) 
+				/*&& !editTitle.equals(savedTitle)*/){	//修改系统语言后，widget不能更新
+			editor.putString(Constant.KEY_NOTE_TITLE + widgetId, editTitle);
+			NoteAppWidgetProvider.setSummary(widgetId, editTitle);
 		}
 		
 		TextView contentView = (TextView) findViewById(R.id.noteContent);
-		String content = contentView.getText().toString().trim();
-		if(!TextUtils.isEmpty(content)){
-			editor.putString(Constant.KEY_NOTE_CONTENT + widgetId, content);
+		String editContent = contentView.getText().toString().trim();
+		String savedContent = preferences.getString(Constant.KEY_NOTE_CONTENT + widgetId, "");
+		if((!TextUtils.isEmpty(editContent) || !TextUtils.isEmpty(savedContent))
+				&& !editContent.equals(savedContent)){
+			editor.putString(Constant.KEY_NOTE_CONTENT + widgetId, editContent);
 		}
 		editor.commit();
 	}

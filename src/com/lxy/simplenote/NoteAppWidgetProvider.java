@@ -1,16 +1,19 @@
 package com.lxy.simplenote;
 
+import java.util.ArrayList;
+
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.widget.RemoteViews;
 
 public class NoteAppWidgetProvider extends AppWidgetProvider{
 	
-	private static RemoteViews mRemoteViews;
-	private static AppWidgetManager mAppWidgeManger;
+	private static ArrayList<RemoteViewsContainer> mContainers = new ArrayList<RemoteViewsContainer>();
 	
 	/**
 	 * 每删除一次窗口小部件就调用一次
@@ -18,7 +21,17 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 	@Override
 	public void onDeleted(Context context, int[] appWidgetIds) {
 		super.onDeleted(context, appWidgetIds);
-		Constant.log("onDeleted --- appWidgetIds.length = " + appWidgetIds.length);
+		Constant.log("onDeleted --- appWidgetIds.length = " + appWidgetIds.length + ",ids[0] = " + appWidgetIds[0]);
+		for(int i = 0; i < appWidgetIds.length; i++){
+			String titleKey = Constant.KEY_NOTE_TITLE + appWidgetIds[i];
+			String contentKey = Constant.KEY_NOTE_CONTENT + appWidgetIds[i];
+			SharedPreferences preferences = context.getSharedPreferences(Constant.PREFERENCES_NAME, 0);
+			Editor editor = preferences.edit();
+			editor.remove(titleKey);
+			editor.remove(contentKey);
+			editor.commit();
+			removeContainerAdId(mContainers, appWidgetIds[i]);
+		}
 	}
 
 	/**
@@ -103,8 +116,7 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 			AppWidgetManager appWidgeManger, int appWidgetId) {
 		
 		Constant.log("onWidgetUpdate: appWidgetId = " + appWidgetId);
-		mAppWidgeManger = appWidgeManger;
-		mRemoteViews = new RemoteViews(context.getPackageName(), R.layout.note_widget_layout);
+		RemoteViews mRemoteViews = new RemoteViews(context.getPackageName(), R.layout.note_widget_layout);
 		
 		//"窗口小部件"点击事件发送的Intent广播
 		Intent intentClick = new Intent();
@@ -114,6 +126,9 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intentClick, appWidgetId);
 		mRemoteViews.setOnClickPendingIntent(R.id.imageview_widget, pendingIntent);
 		appWidgeManger.updateAppWidget(appWidgetId, mRemoteViews);
+		
+		RemoteViewsContainer container = new RemoteViewsContainer(mRemoteViews, appWidgeManger, appWidgetId);
+		mContainers.add(container);
 	}
 	
 	/**
@@ -121,9 +136,60 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 	 * @param summary
 	 */
 	public static void setSummary(int widgetId, String summary){
-		Constant.log("setSummary: summary = " + summary + ", mRemoteViews = " + mRemoteViews);
-		if(mRemoteViews == null) return;
-		mRemoteViews.setTextViewText(R.id.textview_summary, summary);
-		mAppWidgeManger.updateAppWidget(widgetId, mRemoteViews);
+		Constant.log("setSummary: widgetId = " + widgetId + ", summary = " + summary);
+		RemoteViewsContainer c = getContainerAsId(mContainers, widgetId);
+		Constant.log("setSummary: RemoteViewsContainer = " + c);
+		if(c == null) return;
+		RemoteViews remoteView = c.getRemoteView();
+		Constant.log("setSummary: remoteView = " + remoteView);
+		if(remoteView == null) return;
+		remoteView.setTextViewText(R.id.textview_summary, summary);
+		c.getAppWidgetManager().updateAppWidget(widgetId, remoteView);
 	}
+	
+	class RemoteViewsContainer{
+		private RemoteViews remoteView;
+		private AppWidgetManager manager;
+		private int widgetId;
+		
+		public RemoteViewsContainer(RemoteViews v, AppWidgetManager m, int id){
+			remoteView = v;
+			manager = m;
+			widgetId = id;
+		}
+		
+		public int getWidgetId(){
+			return widgetId;
+		}
+		
+		public RemoteViews getRemoteView(){
+			return remoteView;
+		}
+		
+		public AppWidgetManager getAppWidgetManager(){
+			return manager;
+		}
+	}
+	
+	private static RemoteViewsContainer getContainerAsId(ArrayList<RemoteViewsContainer> containers, int id){
+		if(containers.isEmpty()) return null;
+		for(int i = 0; i < containers.size(); i++){
+			RemoteViewsContainer c = containers.get(i);
+			if(c.getWidgetId() == id){
+				return c;
+			}
+		}
+		return null;
+	}
+	
+	private static void removeContainerAdId(ArrayList<RemoteViewsContainer> containers, int id){
+		if(containers.isEmpty()) return;
+		for(int i = 0; i < containers.size(); i++){
+			RemoteViewsContainer c = containers.get(i);
+			if(c.getWidgetId() == id){
+				containers.remove(i);
+			}
+		}
+	}
+	
 }
