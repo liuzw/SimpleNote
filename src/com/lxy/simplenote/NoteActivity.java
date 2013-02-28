@@ -79,7 +79,7 @@ public class NoteActivity extends Activity{
 		if((!TextUtils.isEmpty(editTitle) || !TextUtils.isEmpty(savedTitle)) 
 				/*&& !editTitle.equals(savedTitle)*/){	//修改系统语言后，widget不能更新
 			editor.putString(Constant.KEY_NOTE_TITLE + widgetId, editTitle);
-			NoteAppWidgetProvider.setSummary(widgetId, editTitle);
+			NoteAppWidgetProvider.setSummary(this,widgetId, editTitle);
 		}
 		
 		TextView contentView = (TextView) findViewById(R.id.noteContent);

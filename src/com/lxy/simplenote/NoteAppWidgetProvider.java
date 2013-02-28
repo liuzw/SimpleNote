@@ -1,7 +1,5 @@
 package com.lxy.simplenote;
 
-import java.util.ArrayList;
-
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -9,12 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.Bundle;
 import android.widget.RemoteViews;
 
 public class NoteAppWidgetProvider extends AppWidgetProvider{
 	
-	private static ArrayList<RemoteViewsContainer> mContainers = new ArrayList<RemoteViewsContainer>();
-	
+
 	/**
 	 * 每删除一次窗口小部件就调用一次
 	 */
@@ -30,7 +28,6 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 			editor.remove(titleKey);
 			editor.remove(contentKey);
 			editor.commit();
-			removeContainerAdId(mContainers, appWidgetIds[i]);
 		}
 	}
 
@@ -127,69 +124,26 @@ public class NoteAppWidgetProvider extends AppWidgetProvider{
 		mRemoteViews.setOnClickPendingIntent(R.id.imageview_widget, pendingIntent);
 		appWidgeManger.updateAppWidget(appWidgetId, mRemoteViews);
 		
-		RemoteViewsContainer container = new RemoteViewsContainer(mRemoteViews, appWidgeManger, appWidgetId);
-		mContainers.add(container);
 	}
 	
 	/**
 	 * 更新窗口小部件上显示的文字
 	 * @param summary
 	 */
-	public static void setSummary(int widgetId, String summary){
+	public static void setSummary(Context context, int widgetId, String summary){
 		Constant.log("setSummary: widgetId = " + widgetId + ", summary = " + summary);
-		RemoteViewsContainer c = getContainerAsId(mContainers, widgetId);
-		Constant.log("setSummary: RemoteViewsContainer = " + c);
-		if(c == null) return;
-		RemoteViews remoteView = c.getRemoteView();
-		Constant.log("setSummary: remoteView = " + remoteView);
-		if(remoteView == null) return;
-		remoteView.setTextViewText(R.id.textview_summary, summary);
-		c.getAppWidgetManager().updateAppWidget(widgetId, remoteView);
-	}
-	
-	class RemoteViewsContainer{
-		private RemoteViews remoteView;
-		private AppWidgetManager manager;
-		private int widgetId;
+		AppWidgetManager manager = AppWidgetManager.getInstance(context);
+		RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.note_widget_layout);
 		
-		public RemoteViewsContainer(RemoteViews v, AppWidgetManager m, int id){
-			remoteView = v;
-			manager = m;
-			widgetId = id;
-		}
-		
-		public int getWidgetId(){
-			return widgetId;
-		}
-		
-		public RemoteViews getRemoteView(){
-			return remoteView;
-		}
-		
-		public AppWidgetManager getAppWidgetManager(){
-			return manager;
-		}
+		//"窗口小部件"点击事件发送的Intent广播
+		Intent intentClick = new Intent();
+		intentClick.setAction(Constant.ACTION_SIMPLE_NOTE_WIGET_CLICK);
+		intentClick.putExtra(Constant.KEY_WIDGET_ID, widgetId);
+		Constant.log("onWidgetUpdate: intentClick = " + intentClick);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intentClick, widgetId);
+		rv.setOnClickPendingIntent(R.id.imageview_widget, pendingIntent);
+				
+		rv.setTextViewText(R.id.textview_summary, summary);
+		manager.updateAppWidget(widgetId, rv);
 	}
-	
-	private static RemoteViewsContainer getContainerAsId(ArrayList<RemoteViewsContainer> containers, int id){
-		if(containers.isEmpty()) return null;
-		for(int i = 0; i < containers.size(); i++){
-			RemoteViewsContainer c = containers.get(i);
-			if(c.getWidgetId() == id){
-				return c;
-			}
-		}
-		return null;
-	}
-	
-	private static void removeContainerAdId(ArrayList<RemoteViewsContainer> containers, int id){
-		if(containers.isEmpty()) return;
-		for(int i = 0; i < containers.size(); i++){
-			RemoteViewsContainer c = containers.get(i);
-			if(c.getWidgetId() == id){
-				containers.remove(i);
-			}
-		}
-	}
-	
 }
