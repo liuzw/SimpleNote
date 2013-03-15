@@ -118,7 +118,7 @@ public class NoteActivity extends Activity{
 			// TODO Auto-generated method stub
 			mContentView.removeTextChangedListener(mTextWatcher);
 			boolean isDelete = (before == 1);
-			CursorPositionManager cpm = new CursorPositionManager(start + 1);	//start + 1: set start begin from 1
+			CursorPositionManager cpm = new CursorPositionManager(start + count);
 			String srt = Constant.contentSmartProcess(s, isDelete, cpm);
 			mContentView.setText(srt);
 			int cp = cpm.getCursorPosition() <= srt.length() ? cpm.getCursorPosition() : srt.length();

@@ -93,7 +93,7 @@ public class Constant {
 	 */
 	public static String contentSmartProcess(CharSequence s, boolean isDelete, CursorPositionManager cp){
 		
-//		log("需要处理的内容是： " + s + ", isDelete = " + isDelete + ", cp = " + cp);
+		log("需要处理的内容是： " + s + ", isDelete = " + isDelete + ", cp = " + cp);
 		
 		if(s == null || s.length() < 3) return s.toString();
 
@@ -149,11 +149,11 @@ public class Constant {
 		
 		//光标位置处理
 		if(isDelete){
-			cp.setCursoPosition(cp.getStart() - 1);
+			cp.setCursoPosition(cp.getStart());
 		}else{
 			cp.setCursoPosition(cp.getStart() + cursorOffset);
 		}
-//		log("处理后的内容是： " + sb.toString() + ", cp = " + cp);
+		log("处理后的内容是： " + sb.toString() + ", cp = " + cp);
 		return sb.toString();
 	}
 	
